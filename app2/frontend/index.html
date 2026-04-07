@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<title>Weather API Viewer</title>
+<style>
+body {font-family: Arial; margin:20px;}
+h1 {color:#333;}
+select, input {margin:5px;}
+table {border-collapse: collapse; width:100%; margin-top:10px;}
+th, td {border:1px solid #ccc; padding:5px; text-align:left;}
+th {background:#f4f4f4;}
+</style>
+</head>
+<body>
+<h1>Weather Data Viewer</h1>
+
+<label for="station">Station:</label>
+<select id="station"></select>
+
+<label for="from">From:</label>
+<input type="date" id="from">
+<label for="to">To:</label>
+<input type="date" id="to">
+
+<button onclick="loadData()">Load Data</button>
+
+<table id="data-table">
+<thead><tr></tr></thead>
+<tbody></tbody>
+</table>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+async function loadStations() {
+    try {
+        const res = await fetch(`${API}/stations`);
+        const json = await res.json();
+
+        const select = document.getElementById("station");
+
+        select.innerHTML = "";
+
+        json.stations.forEach(s => {
+            const option = document.createElement("option");
+            option.value = s;
+            option.textContent = s;
+            select.appendChild(option);
+        });
+
+    } catch (err) {
+        console.error("Error loading stations:", err);
+    }
+}
+
+async function loadData() {
+    const station = document.getElementById("station").value;
+    const from = document.getElementById("from").value;
+    const to = document.getElementById("to").value;
+
+    let url = `${API}/stations/${station}?`;
+
+    if (from) url += `from_date=${from}&`;
+    if (to) url += `to_date=${to}&`;
+
+    const res = await fetch(url);
+    if (!res.ok) {
+        alert("No data found!");
+        return;
+    }
+    const json = await res.json();
+
+     const data = json.data;
+
+    const thead = document.querySelector("#data-table thead tr");
+    const tbody = document.querySelector("#data-table tbody");
+
+    thead.innerHTML = "";
+    tbody.innerHTML = "";
+
+    if (!data || data.length === 0) {
+        alert("No data!");
+        return;
+    }
+
+    // headers
+    Object.keys(data[0]).forEach(key => {
+        const th = document.createElement("th");
+        th.textContent = key;
+        thead.appendChild(th);
+    });
+
+    // rows
+    data.forEach(row => {
+        const tr = document.createElement("tr");
+
+        Object.values(row).forEach(val => {
+            const td = document.createElement("td");
+            td.textContent = val;
+            tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+window.onload = loadStations;
+</script>
+</body>
+</html>
